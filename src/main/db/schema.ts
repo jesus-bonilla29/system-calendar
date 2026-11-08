@@ -1,11 +1,12 @@
 import { sql } from 'drizzle-orm'
-import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import {
   FLEXIBILITIES,
   ITEM_KINDS,
   ITEM_STATUSES,
   OPEN_MODES,
-  RESOURCE_TYPES
+  RESOURCE_TYPES,
+  TRIGGER_STATUSES
 } from '../../shared/constants'
 
 /*
@@ -166,3 +167,33 @@ export const settings = sqliteTable('settings', {
   key: text('key').primaryKey(),
   value: text('value', { mode: 'json' }).$type<unknown>().notNull()
 })
+
+/**
+ * Próximos disparos del scheduler, persistidos para sobrevivir a reinicios y suspensiones.
+ * Una fila por (recordatorio, ocurrencia). `kind` es texto libre para poder añadir tipos
+ * (p. ej. 'start' en la Fase 3) sin migrar.
+ */
+export const scheduledTriggers = sqliteTable(
+  'scheduled_triggers',
+  {
+    id: id(),
+    kind: text('kind').notNull().default('reminder'),
+    itemId: text('item_id')
+      .notNull()
+      .references(() => items.id, { onDelete: 'cascade' }),
+    /** set null: si se edita el recordatorio, el historial de avisos no se pierde. */
+    reminderId: text('reminder_id').references(() => reminders.id, { onDelete: 'set null' }),
+    /** Inicio original de la ocurrencia a la que avisa (ms UTC). */
+    occurrenceStart: integer('occurrence_start').notNull(),
+    fireAt: integer('fire_at').notNull(),
+    status: text('status', { enum: TRIGGER_STATUSES }).notNull().default('pending'),
+    snoozeCount: integer('snooze_count').notNull().default(0),
+    firedAt: integer('fired_at'),
+    /** El usuario ya vio este aviso perdido en el resumen. */
+    acknowledgedAt: integer('acknowledged_at')
+  },
+  (t) => [
+    uniqueIndex('triggers_unique_idx').on(t.reminderId, t.occurrenceStart),
+    index('triggers_due_idx').on(t.status, t.fireAt)
+  ]
+)
