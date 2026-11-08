@@ -12,6 +12,10 @@ export const ipcContract = {
   'app:ping': {
     request: z.object({ message: z.string().max(200) }),
     response: z.object({ reply: z.string(), receivedAt: z.string() })
+  },
+  'app:dbInfo': {
+    request: z.object({}),
+    response: z.object({ migrationsApplied: z.number().int(), tables: z.array(z.string()) })
   }
 } as const satisfies Record<IpcChannel, { request: z.ZodType; response: z.ZodType }>
 export type IpcRequest<C extends IpcChannel> = z.infer<(typeof ipcContract)[C]['request']>

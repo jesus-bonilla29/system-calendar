@@ -1,5 +1,6 @@
 import { join } from 'node:path'
 import { app, BrowserWindow, session } from 'electron'
+import { openDatabase } from './db'
 import { registerIpc } from './ipc'
 
 const isDev = !app.isPackaged
@@ -42,7 +43,9 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   setupSecurity()
-  registerIpc()
+  // La base vive en %APPDATA%\agenda (nunca en la carpeta del proyecto).
+  const dbHandle = openDatabase(join(app.getPath('userData'), 'agenda.db'), join(app.getAppPath(), 'drizzle'))
+  registerIpc(dbHandle)
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
