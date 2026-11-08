@@ -1,14 +1,16 @@
 import { randomUUID } from 'node:crypto'
-import { and, asc, eq, isNotNull, isNull, lte, or } from 'drizzle-orm'
+import { and, asc, desc, eq, isNotNull, isNull, lte, or } from 'drizzle-orm'
 import type { AppDb } from '../db'
-import { activityLogs, items, recurrences } from '../db/schema'
+import { activityLogs, items, recurrences, reminders } from '../db/schema'
 import type { ItemStatus } from '../../shared/constants'
 import type {
   ItemDetailDto,
   ItemDto,
   ItemWithRecurrenceInput,
   OccurrenceDto,
-  RecurrenceDto
+  RecurrenceDto,
+  ReminderDto,
+  ReminderInput
 } from '../../shared/domain'
 import { expandOccurrences } from '../../shared/recurrence'
 
@@ -20,6 +22,7 @@ export class NotFoundError extends Error {
 }
 
 type ItemRow = typeof items.$inferSelect
+type Tx = Parameters<Parameters<AppDb['transaction']>[0]>[0]
 
 export class AgendaService {
   constructor(
@@ -46,6 +49,7 @@ export class AgendaService {
           .values({ id: this.newId(), itemId: id, ...data.recurrence, exceptions: [] })
           .run()
       }
+      for (const r of data.reminders ?? []) this.insertReminder(tx, id, r)
       tx.insert(activityLogs)
         .values({
           id: this.newId(),
@@ -63,7 +67,11 @@ export class AgendaService {
   get(id: string): ItemDetailDto | null {
     const item = this.db.select().from(items).where(eq(items.id, id)).get()
     if (!item) return null
-    return { item: toItemDto(item), recurrence: this.getRecurrence(id) }
+    return {
+      item: toItemDto(item),
+      recurrence: this.getRecurrence(id),
+      reminders: this.getReminders(id)
+    }
   }
 
   update(id: string, data: ItemWithRecurrenceInput): ItemDetailDto {
@@ -114,6 +122,8 @@ export class AgendaService {
             .run()
         }
       }
+
+      this.replaceReminders(tx, id, data.reminders ?? [])
     })
     return this.requireDetail(id)
   }
@@ -220,6 +230,57 @@ export class AgendaService {
       .orderBy(asc(items.priority), asc(items.dueAt))
       .all()
       .map(toItemDto)
+  }
+
+  private getReminders(itemId: string): ReminderDto[] {
+    return this.db
+      .select()
+      .from(reminders)
+      .where(eq(reminders.itemId, itemId))
+      .orderBy(desc(reminders.offsetMinutes), asc(reminders.id))
+      .all()
+      .map((r) => ({
+        id: r.id,
+        offsetMinutes: r.offsetMinutes,
+        snoozeMinutes: r.snoozePolicy.minutes,
+        maxSnoozes: r.snoozePolicy.maxSnoozes
+      }))
+  }
+
+  private insertReminder(tx: Tx, itemId: string, r: ReminderInput): void {
+    tx.insert(reminders)
+      .values({
+        id: this.newId(),
+        itemId,
+        offsetMinutes: r.offsetMinutes,
+        snoozePolicy: { minutes: r.snoozeMinutes, maxSnoozes: r.maxSnoozes }
+      })
+      .run()
+  }
+
+  /** Sustituye los recordatorios reutilizando filas por posición para conservar sus IDs (y su historial). */
+  private replaceReminders(tx: Tx, itemId: string, next: ReminderInput[]): void {
+    const sorted = [...next].sort((a, b) => b.offsetMinutes - a.offsetMinutes)
+    const current = tx
+      .select()
+      .from(reminders)
+      .where(eq(reminders.itemId, itemId))
+      .orderBy(desc(reminders.offsetMinutes), asc(reminders.id))
+      .all()
+    sorted.forEach((r, i) => {
+      const row = current[i]
+      if (!row) return this.insertReminder(tx, itemId, r)
+      tx.update(reminders)
+        .set({
+          offsetMinutes: r.offsetMinutes,
+          snoozePolicy: { minutes: r.snoozeMinutes, maxSnoozes: r.maxSnoozes }
+        })
+        .where(eq(reminders.id, row.id))
+        .run()
+    })
+    for (const extra of current.slice(sorted.length)) {
+      tx.delete(reminders).where(eq(reminders.id, extra.id)).run()
+    }
   }
 
   private getRecurrence(itemId: string): RecurrenceDto | null {

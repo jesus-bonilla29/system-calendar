@@ -46,11 +46,20 @@ export const recurrenceInputSchema = z.object({
 })
 export type RecurrenceInput = z.infer<typeof recurrenceInputSchema>
 
-/** Ítem + recurrencia opcional, como se envían al crear o reemplazar. */
+/** Recordatorio: X minutos antes del inicio, con política de posponer. */
+export const reminderInputSchema = z.object({
+  offsetMinutes: z.number().int().min(0).max(10_080),
+  snoozeMinutes: z.number().int().min(1).max(1440),
+  maxSnoozes: z.number().int().min(0).max(20)
+})
+export type ReminderInput = z.infer<typeof reminderInputSchema>
+
+/** Ítem + recurrencia opcional + recordatorios, como se envían al crear o reemplazar. */
 export const itemWithRecurrenceInputSchema = z
   .object({
     item: itemInputSchema,
-    recurrence: recurrenceInputSchema.nullable()
+    recurrence: recurrenceInputSchema.nullable(),
+    reminders: z.array(reminderInputSchema).max(10).default([])
   })
   .superRefine((v, ctx) => {
     if (v.recurrence && v.item.startAt === null) {
@@ -61,7 +70,8 @@ export const itemWithRecurrenceInputSchema = z
       })
     }
   })
-export type ItemWithRecurrenceInput = z.infer<typeof itemWithRecurrenceInputSchema>
+/** Tipo de entrada: `reminders` es opcional (por defecto, ninguno). */
+export type ItemWithRecurrenceInput = z.input<typeof itemWithRecurrenceInputSchema>
 
 export const itemSchema = z.object({
   id: z.string(),
@@ -90,9 +100,13 @@ export const recurrenceSchema = z.object({
 })
 export type RecurrenceDto = z.infer<typeof recurrenceSchema>
 
+export const reminderSchema = reminderInputSchema.extend({ id: z.string() })
+export type ReminderDto = z.infer<typeof reminderSchema>
+
 export const itemDetailSchema = z.object({
   item: itemSchema,
-  recurrence: recurrenceSchema.nullable()
+  recurrence: recurrenceSchema.nullable(),
+  reminders: z.array(reminderSchema)
 })
 export type ItemDetailDto = z.infer<typeof itemDetailSchema>
 
