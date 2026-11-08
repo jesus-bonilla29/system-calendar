@@ -1,2 +1,13 @@
-// El puente IPC tipado se añade en el siguiente paso.
-export {}
+import { contextBridge, ipcRenderer } from 'electron'
+import { ipcChannels } from '@shared/channels'
+import type { AgendaApi } from '@shared/ipc'
+
+// Solo se exponen los canales del contrato; la interfaz nunca ve ipcRenderer ni Node.
+const api: AgendaApi = {
+  invoke(channel, payload) {
+    if (!(ipcChannels as readonly string[]).includes(channel)) throw new Error(`Canal no permitido: ${channel}`)
+    return ipcRenderer.invoke(channel, payload)
+  }
+}
+
+contextBridge.exposeInMainWorld('api', api)
