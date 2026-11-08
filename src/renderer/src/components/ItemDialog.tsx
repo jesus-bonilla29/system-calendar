@@ -11,7 +11,8 @@ import {
 import {
   itemWithRecurrenceInputSchema,
   type ItemDetailDto,
-  type OccurrenceDto
+  type OccurrenceDto,
+  type ReminderInput
 } from '@shared/domain'
 import { fromInputs, systemTimezone, toDateInput, toTimeInput } from '../lib/dates'
 import {
@@ -63,6 +64,7 @@ interface FormState {
   repeatMode: RepeatMode
   repeat: RepeatConfig
   rawRule: string
+  reminders: ReminderInput[]
 }
 
 function initialState(detail: ItemDetailDto | null, defaultStart: number | null): FormState {
@@ -86,7 +88,8 @@ function initialState(detail: ItemDetailDto | null, defaultStart: number | null)
       flexibility: 'rigid',
       repeatMode: 'none',
       repeat: defaultRepeat(),
-      rawRule: ''
+      rawRule: '',
+      reminders: []
     }
   }
   const { item, recurrence } = detail
@@ -109,7 +112,12 @@ function initialState(detail: ItemDetailDto | null, defaultStart: number | null)
     flexibility: item.flexibility,
     repeatMode: !recurrence ? 'none' : parsed ? 'simple' : 'advanced',
     repeat: parsed ?? defaultRepeat(),
-    rawRule: recurrence?.rrule ?? ''
+    rawRule: recurrence?.rrule ?? '',
+    reminders: detail.reminders.map(({ offsetMinutes, snoozeMinutes, maxSnoozes }) => ({
+      offsetMinutes,
+      snoozeMinutes,
+      maxSnoozes
+    }))
   }
 }
 
@@ -132,7 +140,8 @@ function toPayload(f: FormState, timezone: string): unknown {
       status: f.status,
       flexibility: f.flexibility
     },
-    recurrence: f.repeatMode === 'none' ? null : { rrule, timezone }
+    recurrence: f.repeatMode === 'none' ? null : { rrule, timezone },
+    reminders: f.reminders
   }
 }
 
@@ -207,6 +216,19 @@ export function ItemDialog({
       if (!r.ok) throw new Error('No se pudo omitir esta ocurrencia')
     })
   }
+
+  const setReminder = (i: number, patch: Partial<ReminderInput>): void =>
+    setF((p) => ({
+      ...p,
+      reminders: p.reminders.map((r, j) => (j === i ? { ...r, ...patch } : r))
+    }))
+  const addReminder = (): void =>
+    setF((p) => ({
+      ...p,
+      reminders: [...p.reminders, { offsetMinutes: 10, snoozeMinutes: 10, maxSnoozes: 3 }]
+    }))
+  const removeReminder = (i: number): void =>
+    setF((p) => ({ ...p, reminders: p.reminders.filter((_, j) => j !== i) }))
 
   const toggleDay = (d: number): void => {
     const days = f.repeat.weekdays.includes(d)
@@ -529,6 +551,64 @@ export function ItemDialog({
             </div>
           )}
           {f.repeatMode !== 'none' && <span className="muted">Zona horaria: {timezone}</span>}
+        </fieldset>
+
+        <fieldset>
+          <legend>Recordatorios</legend>
+          {f.reminders.length === 0 && <span className="muted">Sin recordatorios.</span>}
+          {f.reminders.map((r, i) => (
+            <div className="row reminder-row" key={i}>
+              <div className="field">
+                <label htmlFor={`r-off-${i}`}>Avisar (min antes)</label>
+                <input
+                  id={`r-off-${i}`}
+                  type="number"
+                  min={0}
+                  max={10080}
+                  value={r.offsetMinutes}
+                  onChange={(e) => setReminder(i, { offsetMinutes: Number(e.target.value) })}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor={`r-snz-${i}`}>Posponer (min)</label>
+                <input
+                  id={`r-snz-${i}`}
+                  type="number"
+                  min={1}
+                  max={1440}
+                  value={r.snoozeMinutes}
+                  onChange={(e) => setReminder(i, { snoozeMinutes: Number(e.target.value) })}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor={`r-max-${i}`}>Máx. veces</label>
+                <input
+                  id={`r-max-${i}`}
+                  type="number"
+                  min={0}
+                  max={20}
+                  value={r.maxSnoozes}
+                  onChange={(e) => setReminder(i, { maxSnoozes: Number(e.target.value) })}
+                />
+              </div>
+              <button
+                type="button"
+                className="danger"
+                aria-label="Quitar recordatorio"
+                onClick={() => removeReminder(i)}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          <div>
+            <button type="button" onClick={addReminder}>
+              + Añadir recordatorio
+            </button>
+          </div>
+          {f.reminders.length > 0 && !f.startDate && (
+            <span className="muted">Los recordatorios necesitan una fecha de inicio.</span>
+          )}
         </fieldset>
 
         {errors.length > 0 && (

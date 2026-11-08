@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ItemDetailDto, ItemDto, OccurrenceDto } from '@shared/domain'
+import type { MissedViewDto } from '@shared/ipc'
 import { ItemDialog } from './components/ItemDialog'
+import { MissedDialog } from './components/MissedDialog'
+import { SettingsDialog } from './components/SettingsDialog'
 import { MonthView } from './components/MonthView'
 import { TimeGrid } from './components/TimeGrid'
 import { UnscheduledPanel } from './components/UnscheduledPanel'
@@ -26,6 +29,8 @@ export function App(): React.JSX.Element {
   const [dialog, setDialog] = useState<DialogState | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [tick, setTick] = useState(0)
+  const [missed, setMissed] = useState<MissedViewDto[]>([])
+  const [showSettings, setShowSettings] = useState(false)
   const mainRef = useRef<HTMLElement>(null)
 
   const { from, to } = visibleRange(view, cursor)
@@ -57,6 +62,28 @@ export function App(): React.JSX.Element {
 
   const refresh = useCallback(() => setTick((t) => t + 1), [])
   const closeDialog = useCallback(() => setDialog(null), [])
+
+  // Main avisa cuando cambian los datos (estado desde un aviso, reanudación…): recargar y revisar lo perdido.
+  useEffect(() => {
+    const loadMissed = (): void => {
+      window.api
+        .invoke('reminders:listMissed', {})
+        .then(setMissed)
+        .catch((e: unknown) => setError(String(e)))
+    }
+    loadMissed()
+    return window.api.onEvent('data:changed', () => {
+      refresh()
+      loadMissed()
+    })
+  }, [refresh])
+
+  const acknowledgeMissed = (): void => {
+    window.api
+      .invoke('reminders:acknowledge', {})
+      .then(() => setMissed([]))
+      .catch((e: unknown) => setError(String(e)))
+  }
 
   const openNew = (startAt: number | null = null): void =>
     setDialog({ detail: null, occurrence: null, defaultStart: startAt })
@@ -118,6 +145,9 @@ export function App(): React.JSX.Element {
             </button>
           ))}
         </div>
+        <button type="button" onClick={() => setShowSettings(true)}>
+          Ajustes
+        </button>
         <button type="button" className="primary" onClick={() => openNew()}>
           + Nuevo
         </button>
@@ -155,6 +185,9 @@ export function App(): React.JSX.Element {
         onOpen={(id) => void openExisting(id, null)}
         onToggle={(it) => void toggleDone(it)}
       />
+
+      {showSettings && <SettingsDialog onClose={() => setShowSettings(false)} />}
+      {missed.length > 0 && <MissedDialog missed={missed} onAcknowledge={acknowledgeMissed} />}
 
       {dialog && (
         <ItemDialog

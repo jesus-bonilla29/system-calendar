@@ -67,3 +67,29 @@ Vistas día/semana/mes propias con date-fns (semana desde el lunes), sin FullCal
 ### D15. Validación en dos capas
 
 Los esquemas zod de `src/shared/domain.ts` validan en el formulario y de nuevo en main antes de tocar la base. Las fechas se envían como milisegundos UTC.
+
+## Fase 2: Recordatorios
+
+### D16. Scheduler persistente por ticks cortos
+
+Los disparos viven en `scheduled_triggers` (SQLite). No se usa un temporizador largo: un tick cada 15 s compara con el reloj real, así que suspensión, cambios manuales de hora y saltos de NTP se detectan solos. Cada 5 min (y al editar ítems) se reconcilia un horizonte de 48 h; la operación es idempotente (índice único recordatorio + ocurrencia).
+
+### D17. Nada se pierde en silencio
+
+Un aviso que vence con más de 2 min de retraso (app cerrada, suspensión, salto adelante) pasa a `missed`; uno que cae en horas de silencio, a `silenced`. Ambos aparecen en el diálogo "Mientras no estabas" hasta que el usuario los reconoce. Se persiste el último latido (`scheduler.lastTickAt`) para buscar lo vencido desde entonces (máx. 7 días atrás). Se recupera al arrancar y con los eventos `resume` y `unlock-screen` de `powerMonitor`. Si el reloj retrocede, los avisos ya dados no se repiten.
+
+### D18. Aviso con ventana propia + toast nativo
+
+En el equipo de desarrollo las notificaciones de Windows estaban desactivadas (`ToastEnabled = 0`) y Electron no soporta botones en toasts de Windows sin XML y activación por protocolo. Por fiabilidad el aviso principal es una ventana pequeña siempre visible con "Iniciar ahora", "Posponer N min" y "Descartar"; además se lanza un toast nativo sin botones. Si Windows rechaza el toast se registra en el log y el aviso sigue funcionando. Cerrar la ventana sin elegir cuenta como descartado.
+
+### D19. Posponer
+
+Cada recordatorio tiene política propia (minutos y máximo de veces). Posponer reutiliza la fila: vuelve a `pending` con nueva hora y `snoozeCount + 1`; la reconciliación respeta la hora pospuesta. Al llegar al máximo el botón se desactiva.
+
+### D20. Ediciones y recordatorios
+
+Al editar un ítem, los recordatorios se actualizan por posición para conservar sus IDs; el historial de avisos sobrevive (`reminder_id` pasa a null si el recordatorio se borra). Completar o cancelar un ítem, omitir una ocurrencia o quitar recordatorios elimina los avisos pendientes.
+
+### D21. Bandeja, instancia única y autoarranque
+
+Cerrar la ventana la oculta; la app sigue en la bandeja ("Salir" la cierra de verdad). Instancia única: abrir otra vez la app muestra la ventana existente. El arranque con Windows es opcional (desactivado por defecto), se activa en Ajustes y arranca con `--hidden`; solo está disponible en la versión instalada para no registrar `electron.exe` de desarrollo en el sistema. El icono (`resources/icon.png`) se genera con `scripts/make-icon.mjs`; el empaquetado de recursos queda para la Fase 8.

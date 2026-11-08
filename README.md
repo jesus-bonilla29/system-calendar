@@ -2,7 +2,7 @@
 
 Aplicación de escritorio para Windows que planifica tu agenda, hace seguimiento, envía recordatorios y ejecuta acciones automáticas (por ejemplo, abrir los recursos de estudio de una tarea a su hora). Local-first: los datos viven en tu PC.
 
-> Estado: **Fase 1 (agenda básica)**. Hoja de ruta completa en `docs/DECISIONS.md`.
+> Estado: **Fase 2 (recordatorios)**. Hoja de ruta completa en `docs/DECISIONS.md`.
 
 ## Requisitos
 
@@ -35,11 +35,19 @@ npm run dev
 - Crear, editar y borrar tareas, eventos y hábitos (clic en una hora de la rejilla o en un día del mes, o en **+ Nuevo**).
 - Ver la agenda por **día, semana o mes**; las tareas sin fecha aparecen en el panel derecho.
 - Repeticiones (diaria, semanal con días, mensual, anual, o regla RRULE avanzada), con opción de **omitir una ocurrencia**.
+- Añadir **recordatorios** a cualquier ítem ("X minutos antes", con política de posponer). Al llegar la hora aparece una ventana de aviso con **Iniciar ahora / Posponer / Descartar**.
+- La app sigue en la **bandeja del sistema** al cerrar la ventana y avisando; "Salir" desde el icono la cierra de verdad.
+- Si el equipo estuvo suspendido o la app cerrada, al volver aparece **"Mientras no estabas"** con lo que se perdió.
+- **Ajustes:** horas de silencio (23:00–07:00 por defecto) y arranque con Windows (solo en la versión instalada).
+
+### Notificaciones de Windows
+
+Además de la ventana de aviso se envía un toast nativo. Si no lo ves, activa las notificaciones en _Configuración › Sistema › Notificaciones_ (y revisa el modo No molestar). La ventana de aviso funciona aunque estén desactivadas.
 
 ## Estructura
 
 ```
-src/main       Proceso principal (Node): base de datos, IPC, futuros servicios
+src/main       Proceso principal (Node): base de datos, IPC, servicios, scheduler, bandeja y avisos
 src/preload    Puente seguro entre main y la interfaz (contextBridge)
 src/renderer   Interfaz React
 src/shared     Tipos y contrato IPC compartidos

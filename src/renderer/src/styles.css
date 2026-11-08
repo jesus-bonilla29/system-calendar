@@ -388,3 +388,40 @@ legend {
   color: var(--muted);
   font-size: 12px;
 }
+
+/* Ventana de aviso */
+.alert {
+  display: grid;
+  gap: 8px;
+  align-content: center;
+  height: 100%;
+  padding: 16px 18px;
+  background: var(--surface);
+}
+.alert h1 {
+  margin: 0;
+  font-size: 18px;
+}
+.alert p {
+  margin: 0;
+}
+.alert .actions {
+  justify-content: flex-start;
+}
+
+.reminder-row {
+  align-items: flex-end;
+}
+.missed-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.missed-list li {
+  display: grid;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
