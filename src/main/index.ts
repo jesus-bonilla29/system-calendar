@@ -44,7 +44,10 @@ function createWindow(): void {
 app.whenReady().then(() => {
   setupSecurity()
   // La base vive en %APPDATA%\agenda (nunca en la carpeta del proyecto).
-  const dbHandle = openDatabase(join(app.getPath('userData'), 'agenda.db'), join(app.getAppPath(), 'drizzle'))
+  const dbHandle = openDatabase(
+    join(app.getPath('userData'), 'agenda.db'),
+    join(app.getAppPath(), 'drizzle')
+  )
   registerIpc(dbHandle)
   createWindow()
   app.on('activate', () => {

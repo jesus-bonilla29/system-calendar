@@ -24,6 +24,8 @@ export function openDatabase(file: string, migrationsFolder: string): DbHandle {
 }
 
 export function countAppliedMigrations(sqlite: Database.Database): number {
-  const row = sqlite.prepare('SELECT COUNT(*) AS n FROM __drizzle_migrations').get() as { n: number }
+  const row = sqlite.prepare('SELECT COUNT(*) AS n FROM __drizzle_migrations').get() as {
+    n: number
+  }
   return row.n
 }

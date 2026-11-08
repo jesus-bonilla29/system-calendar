@@ -59,7 +59,10 @@ export const recurrences = sqliteTable('recurrences', {
   rrule: text('rrule').notNull(),
   /** Zona horaria IANA con la que se interpreta la regla (p. ej. "America/Bogota"). */
   timezone: text('timezone').notNull(),
-  exceptions: text('exceptions', { mode: 'json' }).$type<number[]>().notNull().default(sql`'[]'`)
+  exceptions: text('exceptions', { mode: 'json' })
+    .$type<number[]>()
+    .notNull()
+    .default(sql`'[]'`)
 })
 
 export const reminders = sqliteTable('reminders', {
@@ -99,7 +102,10 @@ export const resources = sqliteTable(
     type: text('type', { enum: RESOURCE_TYPES }).notNull(),
     /** URL, ruta de archivo, ruta de carpeta o ruta del ejecutable. */
     target: text('target').notNull(),
-    args: text('args', { mode: 'json' }).$type<string[]>().notNull().default(sql`'[]'`),
+    args: text('args', { mode: 'json' })
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'`),
     /** Retraso antes de abrir este recurso (ms); null = usa el del paquete. */
     delayMs: integer('delay_ms')
   },
