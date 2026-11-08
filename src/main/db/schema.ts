@@ -1,5 +1,12 @@
 import { sql } from 'drizzle-orm'
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import {
+  FLEXIBILITIES,
+  ITEM_KINDS,
+  ITEM_STATUSES,
+  OPEN_MODES,
+  RESOURCE_TYPES
+} from '../../shared/constants'
 
 /*
  * Convenciones:
@@ -17,12 +24,6 @@ const updatedAt = () =>
   integer('updated_at', { mode: 'number' })
     .notNull()
     .default(sql`(unixepoch() * 1000)`)
-
-export const ITEM_KINDS = ['task', 'event', 'habit'] as const
-export const ITEM_STATUSES = ['pending', 'in_progress', 'done', 'cancelled', 'skipped'] as const
-export const FLEXIBILITIES = ['rigid', 'flexible'] as const
-export const RESOURCE_TYPES = ['url', 'file', 'folder', 'app'] as const
-export const OPEN_MODES = ['auto', 'manual'] as const
 
 /** Tarea, evento u hábito. Los campos del futuro planificador existen desde el inicio. */
 export const items = sqliteTable(
