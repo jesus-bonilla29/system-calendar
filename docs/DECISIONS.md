@@ -45,3 +45,25 @@ Se recomienda Node 22 LTS (`.nvmrc`); funciona también con Node 25 instalado en
 ### D10. Electron 45
 
 Su paquete no descarga el binario al instalar; se hace con `npx install-electron` (documentado en el README).
+
+## Fase 1: Agenda básica
+
+### D11. Recurrencias con rrule y zona horaria
+
+`rrule` trabaja con fechas "flotantes": se le pasa la hora de pared codificada como UTC y cada ocurrencia se convierte a instante real con `@date-fns/tz`. Así "10:00" sigue siendo las 10:00 al cambiar el horario de verano (tests con Madrid y Nueva York). La regla se guarda sin DTSTART: el inicio es `items.start_at`. Frecuencias de segundos y minutos no se admiten.
+
+### D12. Excepciones y edición de series
+
+Las excepciones son los instantes originales omitidos (`recurrences.exceptions`). En esta fase solo se puede editar la serie completa u omitir una ocurrencia; editar una sola ocurrencia (con sobrescrituras) queda para más adelante porque exige una tabla nueva. Si al editar cambia el inicio o la zona, las excepciones se descartan (ya no apuntarían a instantes válidos).
+
+### D13. Estado de una serie
+
+El estado (pendiente, completada…) es del ítem, no de cada ocurrencia. El seguimiento por ocurrencia (p. ej. un hábito completado hoy pero no ayer) se diseña en la Fase 4.
+
+### D14. Calendario propio
+
+Vistas día/semana/mes propias con date-fns (semana desde el lunes), sin FullCalendar: control total y sin licencias. Los eventos solapados se reparten en columnas (`lib/layout.ts`).
+
+### D15. Validación en dos capas
+
+Los esquemas zod de `src/shared/domain.ts` validan en el formulario y de nuevo en main antes de tocar la base. Las fechas se envían como milisegundos UTC.

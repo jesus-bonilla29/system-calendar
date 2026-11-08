@@ -1,0 +1,390 @@
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --border: #dfe3e8;
+  --text: #1d2430;
+  --muted: #667085;
+  --accent: #2f6fed;
+  --accent-soft: #e6eefe;
+  --danger: #c92a2a;
+  --p1: #d6336c;
+  --p2: #f08c00;
+  --p3: #2f6fed;
+  --p4: #868e96;
+  --today: #fff8e1;
+  --radius: 8px;
+  color-scheme: light dark;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14171c;
+    --surface: #1c2027;
+    --border: #2d333d;
+    --text: #e6e9ef;
+    --muted: #98a1b0;
+    --accent: #5b8cff;
+    --accent-soft: #223155;
+    --danger: #ff6b6b;
+    --today: #2a2a1a;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+button {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+button:hover {
+  border-color: var(--accent);
+}
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+button.danger {
+  color: var(--danger);
+}
+button.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+input,
+select,
+textarea {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+}
+.toolbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.toolbar h1 {
+  font-size: 16px;
+  margin: 0 12px;
+  flex: 1;
+}
+.toolbar h1::first-letter {
+  text-transform: uppercase;
+}
+.segmented {
+  display: flex;
+}
+.segmented button {
+  border-radius: 0;
+}
+.segmented button:first-child {
+  border-radius: 6px 0 0 6px;
+}
+.segmented button:last-child {
+  border-radius: 0 6px 6px 0;
+}
+.main {
+  overflow: auto;
+  min-width: 0;
+}
+.side {
+  border-left: 1px solid var(--border);
+  background: var(--surface);
+  padding: 12px;
+  overflow: auto;
+}
+.side h2 {
+  font-size: 13px;
+  margin: 0 0 8px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.side ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+.side li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.side li .title {
+  flex: 1;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0;
+}
+.side li.done .title {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.muted {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* Rejilla horaria */
+.timegrid {
+  display: grid;
+  min-width: 560px;
+}
+.timegrid .head {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 6px 4px;
+  text-align: center;
+  text-transform: capitalize;
+}
+.timegrid .head.today {
+  color: var(--accent);
+  font-weight: 600;
+}
+.allday {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 2px;
+  display: grid;
+  gap: 2px;
+  align-content: start;
+}
+.hours {
+  position: relative;
+}
+.hours .hour-label {
+  position: absolute;
+  right: 6px;
+  font-size: 11px;
+  color: var(--muted);
+  transform: translateY(-50%);
+}
+.col {
+  position: relative;
+  border-left: 1px solid var(--border);
+  background-image: linear-gradient(var(--border) 1px, transparent 1px);
+  background-size: 100% 48px;
+}
+.col.today {
+  background-color: var(--today);
+}
+.now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--danger);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Chips de eventos */
+.chip {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 2px 6px;
+  border: none;
+  border-left: 3px solid var(--p3);
+  border-radius: 4px;
+  background: var(--accent-soft);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 12px;
+}
+.chip.p1 {
+  border-left-color: var(--p1);
+}
+.chip.p2 {
+  border-left-color: var(--p2);
+}
+.chip.p4 {
+  border-left-color: var(--p4);
+}
+.chip.done {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+.chip.timed {
+  position: absolute;
+  white-space: normal;
+  z-index: 1;
+}
+
+/* Mes */
+.month {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  min-height: 100%;
+}
+.month .dow {
+  padding: 6px;
+  text-align: center;
+  color: var(--muted);
+  text-transform: capitalize;
+  border-bottom: 1px solid var(--border);
+}
+.month .cell {
+  min-height: 96px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+}
+.month .cell.other {
+  background: color-mix(in srgb, var(--bg) 70%, var(--border));
+}
+.month .cell.today {
+  background: var(--today);
+}
+.month .cell .num {
+  font-size: 12px;
+  color: var(--muted);
+}
+.month .cell .more {
+  font-size: 11px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0;
+}
+
+/* Formulario */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: grid;
+  place-items: center;
+  z-index: 10;
+}
+.dialog {
+  overflow-x: hidden;
+  background: var(--surface);
+  border-radius: var(--radius);
+  width: min(620px, 94vw);
+  max-height: 92vh;
+  overflow: auto;
+  padding: 16px 18px;
+  display: grid;
+  gap: 10px;
+}
+.dialog h2 {
+  margin: 0;
+  font-size: 16px;
+}
+.field {
+  display: grid;
+  gap: 4px;
+}
+.field > label,
+.field > .label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.row > .field {
+  flex: 1;
+  min-width: 110px;
+}
+.field input:not([type='checkbox']),
+.field select,
+.field textarea {
+  width: 100%;
+  min-width: 0;
+}
+.check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.weekdays {
+  display: flex;
+  gap: 4px;
+}
+.weekdays button {
+  width: 32px;
+  padding: 4px 0;
+}
+.errors {
+  color: var(--danger);
+  margin: 0;
+  padding-left: 18px;
+}
+.actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.actions .spacer {
+  flex: 1;
+}
+fieldset {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  display: grid;
+  gap: 8px;
+}
+legend {
+  color: var(--muted);
+  font-size: 12px;
+}

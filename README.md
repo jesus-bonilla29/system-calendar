@@ -2,7 +2,7 @@
 
 Aplicación de escritorio para Windows que planifica tu agenda, hace seguimiento, envía recordatorios y ejecuta acciones automáticas (por ejemplo, abrir los recursos de estudio de una tarea a su hora). Local-first: los datos viven en tu PC.
 
-> Estado: **Fase 0 (fundamentos)**. Hoja de ruta completa en `docs/DECISIONS.md`.
+> Estado: **Fase 1 (agenda básica)**. Hoja de ruta completa en `docs/DECISIONS.md`.
 
 ## Requisitos
 
@@ -29,6 +29,12 @@ npm run dev
 | `npm run format`      | Prettier (escribe cambios)                       |
 | `npm run typecheck`   | Comprobación de tipos                            |
 | `npm run db:generate` | Genera una migración tras cambiar `schema.ts`    |
+
+## Qué puedes hacer ahora
+
+- Crear, editar y borrar tareas, eventos y hábitos (clic en una hora de la rejilla o en un día del mes, o en **+ Nuevo**).
+- Ver la agenda por **día, semana o mes**; las tareas sin fecha aparecen en el panel derecho.
+- Repeticiones (diaria, semanal con días, mensual, anual, o regla RRULE avanzada), con opción de **omitir una ocurrencia**.
 
 ## Estructura
 
